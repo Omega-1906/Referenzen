@@ -1,0 +1,339 @@
+═══════════════════════════════════════════════════════════════════════════════
+    DEBUG-SYSTEM - INTEGRATION IN ALLE PLUGINS
+    Schritt-für-Schritt Anleitung mit Code-Beispielen
+═══════════════════════════════════════════════════════════════════════════════
+
+█ SCHRITT 1: PLUGIN DEPENDENCY HINZUFÜGEN
+═══════════════════════════════════════════════════════════════════════════════
+
+In der plugin.yml deines Plugins:
+
+depend: [core-api]
+
+Oder wenn du schon andere Dependencies hast:
+
+depend: [core-api, character, LuckPerms]
+
+Dadurch wird sichergestellt, dass core-api VOR deinem Plugin geladen wird.
+
+
+█ SCHRITT 2: DEBUGMANAGER REFERENZ ERSTELLEN
+═══════════════════════════════════════════════════════════════════════════════
+
+In deiner Haupt-Plugin-Klasse ein Field hinzufügen:
+
+private DebugManager debugManager;
+
+Dann im onEnable() initialisieren:
+
+@Override
+public void onEnable() {
+    // Hole DebugManager Referenz
+    CoreAPIPlugin coreAPI = (CoreAPIPlugin) Bukkit.getPluginManager().getPlugin("core-api");
+    if (coreAPI != null) {
+        this.debugManager = coreAPI.getDebugManager();
+    } else {
+        getLogger().severe("CoreAPIPlugin nicht gefunden! Debug-System nicht verfügbar.");
+    }
+    
+    // Rest deines Codes...
+}
+
+Optional: Getter-Methode hinzufügen (für andere Klassen):
+
+public DebugManager getDebugManager() {
+    return debugManager;
+}
+
+
+█ SCHRITT 3: LOGS IN DEINEM CODE ERSTELLEN
+═══════════════════════════════════════════════════════════════════════════════
+
+──────────────────────────────────────────────────────────────────────────────
+ BEISPIEL 1: POSTAL PLUGIN - onEnable() Logging
+──────────────────────────────────────────────────────────────────────────────
+
+@Override
+public void onEnable() {
+    // DebugManager holen
+    CoreAPIPlugin coreAPI = (CoreAPIPlugin) Bukkit.getPluginManager().getPlugin("core-api");
+    this.debugManager = coreAPI.getDebugManager();
+    
+    try {
+        // Initialisierung
+        debugManager.info("PostalPlugin", "Startup", "Plugin wird geladen...");
+        
+        if (coreAPI == null) {
+            debugManager.critical("PostalPlugin", "Startup", "CoreAPI nicht gefunden!");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        
+        createTables();
+        debugManager.success("PostalPlugin", "Database", "Datenbanktabellen erstellt");
+        
+        registerCommands();
+        registerListeners();
+        debugManager.success("PostalPlugin", "Startup", "Commands & Listener registriert");
+        
+        postOfficeManager.loadPostOffices();
+        debugManager.info("PostalPlugin", "Startup", "PostOffices geladen");
+        
+        debugManager.success("PostalPlugin", "Startup", "Plugin erfolgreich aktiviert!");
+        
+    } catch (Exception e) {
+        debugManager.critical("PostalPlugin", "Startup", "Kritischer Fehler beim Laden", e);
+        getServer().getPluginManager().disablePlugin(this);
+    }
+}
+
+──────────────────────────────────────────────────────────────────────────────
+ BEISPIEL 2: POSTAL PLUGIN - Brief versenden mit Spieler
+──────────────────────────────────────────────────────────────────────────────
+
+public boolean sendLetter(Player sender, String receiver, ItemStack envelope) {
+    try {
+        debugManager.info("PostalPlugin", "Letter Sending", 
+            "Versuch Brief zu senden", sender);
+        
+        if (!isSealedEnvelope(envelope)) {
+            debugManager.warning("PostalPlugin", "Letter Sending", 
+                "Spieler versuchte unversiegelten Brief zu senden", sender);
+            sender.sendMessage("§cBrief muss versiegelt sein!");
+            return false;
+        }
+        
+        // Brief versenden...
+        String sql = "INSERT INTO postal_letters...";
+        coreAPI.executeUpdateSync(sql, ...);
+        
+        debugManager.success("PostalPlugin", "Letter Sending", 
+            "Brief erfolgreich von " + sender.getName() + " an " + receiver + " versendet", 
+            sender);
+        
+        return true;
+        
+    } catch (SQLException e) {
+        debugManager.error("PostalPlugin", "Letter Sending", 
+            "Fehler beim Versenden von Brief an " + receiver, e, sender);
+        sender.sendMessage("§cFehler beim Versenden!");
+        return false;
+    }
+}
+
+──────────────────────────────────────────────────────────────────────────────
+ BEISPIEL 3: CHARACTER PLUGIN - Charakter-Wechsel
+──────────────────────────────────────────────────────────────────────────────
+
+public void switchCharacter(Player player, String characterName) {
+    try {
+        debugManager.info("character", "Character Switch", 
+            "Spieler wechselt zu Charakter: " + characterName, player);
+        
+        // Lade Charakter-Daten
+        Character character = loadCharacter(player.getUniqueId(), characterName);
+        
+        if (character == null) {
+            debugManager.error("character", "Character Switch", 
+                "Charakter nicht gefunden: " + characterName, player);
+            player.sendMessage("§cCharakter nicht gefunden!");
+            return;
+        }
+        
+        // Setze aktiven Charakter
+        setActiveCharacter(player, character);
+        
+        debugManager.success("character", "Character Switch", 
+            "Erfolgreich zu Charakter '" + characterName + "' gewechselt", player);
+        
+    } catch (Exception e) {
+        debugManager.critical("character", "Character Switch", 
+            "Fehler beim Wechsel zu Charakter '" + characterName + "'", e, player);
+        player.sendMessage("§cFehler beim Charakter-Wechsel!");
+    }
+}
+
+
+█ SCHRITT 4: IN COMMANDS VERWENDEN
+═══════════════════════════════════════════════════════════════════════════════
+
+public class CreateBankCommand implements CommandExecutor {
+    private final MoneyPlugin plugin;
+    private final DebugManager debugManager;
+    
+    public CreateBankCommand(MoneyPlugin plugin) {
+        this.plugin = plugin;
+        this.debugManager = plugin.getDebugManager(); // Über Getter holen
+    }
+    
+    @Override
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            return true;
+        }
+        
+        Player player = (Player) sender;
+        
+        try {
+            debugManager.info("MoneyPlugin", "Bank Command", 
+                "Spieler führt /createbank aus", player);
+            
+            if (args.length < 1) {
+                player.sendMessage("§cVerwendung: /createbank <Name>");
+                return true;
+            }
+            
+            String bankName = args[0];
+            
+            // Bank erstellen...
+            plugin.getBankManager().createBank(player, bankName);
+            
+            debugManager.success("MoneyPlugin", "Bank Command", 
+                "Bank '" + bankName + "' erstellt", player);
+            
+        } catch (Exception e) {
+            debugManager.error("MoneyPlugin", "Bank Command", 
+                "Fehler beim Erstellen der Bank", e, player);
+            player.sendMessage("§cFehler beim Erstellen der Bank!");
+        }
+        
+        return true;
+    }
+}
+
+
+█ SCHRITT 5: BEST PRACTICES
+═══════════════════════════════════════════════════════════════════════════════
+
+1. ✅ IMMER Plugin-Namen konsistent verwenden
+   debug.info("PostalPlugin", ...) // RICHTIG
+   debug.info("postal", ...)        // FALSCH
+   debug.info("Postal", ...)        // FALSCH
+
+2. ✅ Sinnvolle Kategorien verwenden
+   - "Startup" - Plugin wird geladen
+   - "Shutdown" - Plugin wird deaktiviert
+   - "Database" - Datenbank-Operationen
+   - "Command" - Befehl-Ausführung
+   - "Player Action" - Spieler-Aktionen
+   - "GUI" - GUI-Interaktionen
+   - "Transaction" - Transaktionen
+   - "Permission" - Berechtigungs-Prüfungen
+
+3. ✅ Level richtig wählen
+   - INFO = Normale Operationen
+   - SUCCESS = Erfolgreiche wichtige Aktionen
+   - WARNING = Potenzielle Probleme
+   - ERROR = Fehler, die behandelt werden
+   - CRITICAL = Schwere Fehler, die zum Absturz führen könnten
+   - DEBUG = Entwickler-Informationen
+
+4. ✅ Spieler-Kontext IMMER mitgeben wenn verfügbar
+   debug.info("Plugin", "Action", "Nachricht", player); // RICHTIG
+   debug.info("Plugin", "Action", "Nachricht");         // Nur wenn kein Spieler beteiligt
+
+5. ✅ Exceptions IMMER mitloggen
+   catch (Exception e) {
+       debug.error("Plugin", "Category", "Nachricht", e); // RICHTIG
+   }
+
+6. ✅ Detaillierte Nachrichten schreiben
+   // SCHLECHT:
+   debug.error("Plugin", "Error", "Error");
+   
+   // GUT:
+   debug.error("PostalPlugin", "Letter Sending", 
+       "Fehler beim Versenden von Brief ID " + letterId + " an " + receiver, exception);
+
+
+█ SCHRITT 6: KOMPLETTES PLUGIN-BEISPIEL
+═══════════════════════════════════════════════════════════════════════════════
+
+package me.Laemedir.example;
+
+import me.Laemedir.coreApi.CoreAPIPlugin;
+import me.Laemedir.coreApi.debug.DebugManager;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class ExamplePlugin extends JavaPlugin {
+    
+    private DebugManager debugManager;
+    
+    @Override
+    public void onEnable() {
+        try {
+            // Debug-System initialisieren
+            CoreAPIPlugin coreAPI = (CoreAPIPlugin) Bukkit.getPluginManager()
+                .getPlugin("core-api");
+            
+            if (coreAPI != null) {
+                this.debugManager = coreAPI.getDebugManager();
+                debugManager.info("ExamplePlugin", "Startup", "Plugin wird geladen...");
+            } else {
+                getLogger().severe("CoreAPIPlugin nicht gefunden!");
+                return;
+            }
+            
+            // Dein Code hier...
+            loadConfig();
+            registerCommands();
+            registerListeners();
+            
+            debugManager.success("ExamplePlugin", "Startup", "Plugin erfolgreich geladen!");
+            
+        } catch (Exception e) {
+            if (debugManager != null) {
+                debugManager.critical("ExamplePlugin", "Startup", 
+                    "Kritischer Fehler beim Laden", e);
+            }
+            getLogger().severe("Fehler: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+        }
+    }
+    
+    @Override
+    public void onDisable() {
+        if (debugManager != null) {
+            debugManager.info("ExamplePlugin", "Shutdown", "Plugin wird deaktiviert");
+        }
+    }
+    
+    public DebugManager getDebugManager() {
+        return debugManager;
+    }
+    
+    private void loadConfig() {
+        try {
+            saveDefaultConfig();
+            debugManager.success("ExamplePlugin", "Config", "Config geladen");
+        } catch (Exception e) {
+            debugManager.error("ExamplePlugin", "Config", "Fehler beim Laden", e);
+        }
+    }
+    
+    private void registerCommands() {
+        // Commands registrieren...
+        debugManager.info("ExamplePlugin", "Startup", "Commands registriert");
+    }
+    
+    private void registerListeners() {
+        // Listeners registrieren...
+        debugManager.info("ExamplePlugin", "Startup", "Listeners registriert");
+    }
+}
+
+
+█ FERTIG!
+═══════════════════════════════════════════════════════════════════════════════
+
+Das war's! Dein Plugin ist jetzt komplett ins Debug-System integriert.
+
+Alle Debug-Logs werden automatisch:
+✓ In der Datenbank gespeichert
+✓ Optional in der Console ausgegeben
+✓ Für Teamler im GUI sichtbar
+✓ Bei Fehlern werden Teamler benachrichtigt
+✓ Können gefiltert und durchsucht werden
+
+Viel Erfolg! 🚀

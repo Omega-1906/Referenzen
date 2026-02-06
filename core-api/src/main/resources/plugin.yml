@@ -1,0 +1,15 @@
+name: core-api
+version: '0.1'
+main: me.Laemedir.coreApi.CoreAPIPlugin
+api-version: '1.21'
+authors: [Omegaa_19]
+description: Laemedir Rollenspiel Core-Plugin
+website: laemedir.de
+depend:
+  - LuckPerms
+
+commands:
+  debug:
+    description: Öffnet das Debug-System
+    usage: /debug [stats|cleanup|test]
+    permission: laemedir.debug

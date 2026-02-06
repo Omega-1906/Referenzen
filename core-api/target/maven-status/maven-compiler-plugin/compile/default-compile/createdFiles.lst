@@ -1,0 +1,13 @@
+me\Laemedir\coreApi\debug\DebugLevel.class
+me\Laemedir\coreApi\debug\DebugManager.class
+me\Laemedir\coreApi\debug\DebugListGUI.class
+me\Laemedir\coreApi\debug\DebugCommand.class
+me\Laemedir\coreApi\debug\DebugDatabase$DebugStats.class
+me\Laemedir\coreApi\debug\DebugFilter.class
+me\Laemedir\coreApi\debug\DebugDatabase.class
+me\Laemedir\coreApi\debug\DebugMainGUI.class
+me\Laemedir\coreApi\debug\DebugEntry.class
+me\Laemedir\coreApi\debug\DebugPluginSelectGUI.class
+me\Laemedir\coreApi\CoreAPIPlugin.class
+me\Laemedir\coreApi\debug\DebugDetailGUI.class
+me\Laemedir\coreApi\debug\DebugListGUI$1.class
