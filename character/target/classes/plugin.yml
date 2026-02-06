@@ -1,0 +1,98 @@
+name: character
+version: '0.1'
+main: me.Laemedir.character.MultiCharPlugin
+api-version: '1.21.1'
+authors: [Omegaa_19]
+description: Plugin für ein Multi-Charakter System mit GUI-Auswahl.
+website: laemedir.de
+depend: [core-api, LibsDisguises]
+commands:
+  characters:
+    description: Öffnet die Charakterauswahl.
+    usage: /characters
+
+  race:
+    description: Verwalte Rassen (erstellen, bearbeiten, löschen, anzeigen).
+    usage: /race <create|edit|delete|list|info>
+    permission:
+      laemedir.admin
+      laemedir.loreteam
+    tab-completer: me.Laemedir.character.RaceCreateTabCompleter
+
+  deletecharacter:
+    description: Löscht einen Charakter aus der Datenbank.
+    usage: /deletecharacter <Charaktername>
+    permission:
+      laemedir.admin
+      laemedir.loreteam
+
+  persona:
+    description: Verwalte deinen Charakter
+    usage: /persona <subcommand> <text>
+    tab-completer: me.Laemedir.character.PersonaTabCompleter
+
+  skilltree:
+    description: Öffnet den Skilltree oder verwaltet Skillpunkte
+    usage: /skilltree [addpoints <Spieler> <Anzahl> | info <Spieler>]
+
+  rpdice:
+    description: Würfelt einen 1d20-Würfel mit optionalem Attribut-Modifikator
+    usage: /rpdice 1d20 [Attribut]
+
+
+  armorclass:
+    description: Berechnet die Rüstungsklasse eines Charakters
+    usage: /armorclass <charakter-id>
+    permission: multichar.dice.armorclass
+  attackroll:
+    description: Führt einen Angriffswurf für einen Charakter gegen ein Ziel aus
+    usage: /attackroll <angreifer-charakter-id> <ziel-charakter-id>
+    permission: multichar.dice.attackroll
+
+  disguise:
+    description: Verwandelt einen Spieler
+    usage: /disguise <Spieler> <ID> <Größe>
+    permission:
+      laemedir.team
+  givedisguise:
+    description: Gibt einem Spieler eine Verwandlung
+    usage: /givedisguise <Spieler> <ID> <Größe>
+    permission:
+      laemedir.admin
+      laemedir.loreteam
+
+  removedisguise:
+    description: Entfernt eine Verwandlung aus dem Besitz eines Spielers.
+    usage: /removedisguise <Spieler> <ID>
+    permission:
+      laemedir.admin
+      laemedir.loreteam
+
+  verwandlung:
+    description: Verwandelt sich selbst
+    usage: /verwandlung
+
+  antiagingtrank:
+    description: Erstellt einen Anti-Alterungs-Trank
+    usage: /antiagingtrank [Anzahl]
+    permission: laemedir.admin
+  antiagingchest:
+    description: Verwaltet die Anti-Aging-Kiste
+    usage: /antiagingchest <set|fill>
+    permission: laemedir.admin
+  charmenu:
+    description: Öffnet das Character-Management-Menü für Teammitglieder
+    usage: /charmenu
+    permission: laemedir.team
+  charedit:
+    description: Bearbeitet Charakterdaten für Teammitglieder
+    usage: /charedit <charaktername> <feld> <wert>
+    permission: laemedir.team
+
+permissions:
+  multichar.disguise.admin:
+    description: Erlaubt das Verwandeln anderer Spieler
+    default: op
+  multichar.disguise.give:
+    description: Erlaubt das Geben von Verwandlungen
+    default: op
